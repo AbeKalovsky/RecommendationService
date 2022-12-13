@@ -1,55 +1,49 @@
-# Example Project Design Doc - Amazon Music Playlist Service Design
+# Recommendation Service Project Design Doc - Magic The Gathering Synergy Service Design
 
-Please use the following as a reference while completing your design. It has
-been filled out with the details of the starter project you will be receiving,
-based on the Unit 4 project.
 
 ## 1. Problem Statement
 
-[Amazon Music Unlimited](https://www.amazon.com/b?ie=UTF8&node=15730321011) is a
-premium music subscription service featuring tens of millions of songs available
-to our millions of customers. We currently provide expert curated, pre-made
-playlists, but customers have often requested the ability to create and manage
-their own custom playlists.
+[Magic: The Gathering](https://magic.wizards.com/en/intro) is a
+table-top trading card game that has been around since the early 1990s. While the game 
+itself is already challenging, the deck-building aspect can add another layer of complexity.
+This service will provide a path to simplifying the deck-building process by offering recommendations for cards 
+with high synergy. This will allow players, especially new ones, to avoid pouring through the 10s of thousands
+of magic cards currently in circulation.
 
-This design document describes the Amazon Music Playlist Service, a new service that will provide the custom playlist functionality to meet
-our customers' needs. It is designed to interact with the Amazon Music client
-(which allows customers to stream music from their Amazon Music subscriptionDao to their
-phone or computer) and will return a list of song metadata associated with the
-playlist that the Amazon Music client can use to fetch the song file when
-playing.
+This design document describes the Magic The Gathering Recommendation Service, 
+a new service that will provide the custom card recommendations to meet
+our customers' needs. It is designed to interact with the Magic The Gathering database
+and will return a list of cards that synergize with the card found in the database.
 
 ## 2. Top Questions to Resolve in Review
 
-1. Should GET playlist and GET playlist/songs be separate endpoints? Will we
-   regret not putting those together if by far the most common request for a
-   playlist is getting the songs? 
-2. We don't think ASIN + track number is the best unique identifier for songs
-   (the same song might be on multiple albums, or there might be multiple ASINs
-   for the same album, leading to weird duplicates). If we decide later on to
-   change identifiers, will our current design make that too painful of a
-   transition? Should we consider having our own songs table? Or have our own
-   identifiers that *point to* ASINs + track numbers for now?
+1. How will we design our recommender method? 
+2. How will we connect to the wizards of the coast's database?
 3. Do you know of any other teams out there who are working on related problems?
-   Or might have the same concerns about how to identify a unique song?
+   Or might have the same concerns about how to create the recommender method?
 
 ## 3. Use Cases
 
-U1. As a customer, I want to create a new, empty playlist with a given name and
-a list of tags.
+U1. As a user, I want to input new cards as recommendations.
 
-U2. As a customer, I want to retrieve my playlist with a given ID.
+U2. As a user, I want to upvote/downvote cards that are already in the recommendation list.
 
-U3. As a customer, I want to update my playlist name.
+U3. As a user, I want to retrieve a list of recommendations.
 
-U4. As a customer, I want to add a song to the end of my playlist.
+U4. As a user, I want to be able to create a profile.
 
-U5. As a customer, I want to add a song to the beginning of my playlist.
+U5. As a user, I want to save a searched card.
 
-U6. As a customer, I want to retrieve all songs in my playlist.
+U6. As a user, I want to see the market price via TCG when I'm looking 
+at a card.
 
-U7. As a customer, I want to retrieve all songs in my playlist in a provided
-order (default order, reverse order, shuffled).
+U6. As a guest, I want to be able to view/search cards.
+
+U7. As an admin/moderator, I want to delete cards from the recommendation lists.
+
+U8. As an admin/moderator, I want to delete or update users.
+
+U9. As an admin, I want to assign moderators.
 
 ## 4. Project Scope
 
