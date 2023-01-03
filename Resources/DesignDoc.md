@@ -49,161 +49,118 @@ U9. As an admin, I want to assign moderators.
 
 ### 4.1. In Scope
 
-* Creating, retrieving, and updating a playlist
-* Adding to and retrieving a saved playlist's list of songs
+* Adding cards to another card's recommendations list.
+* Up-voting and Down-voting cards within a recommendations list.
+* Storing favorite cards within a profile.
+* Searching for card based on the API requirements.
 
 ### 4.2. Out of Scope
 
-* Updating playlist tags
-* Integration with Amazon Music Client
-* When adding a song on the website, having a drop down or autocomplete with the
-  different songs available.
-* The ability to play music from the website
-* The ability to search for existing songs either through the website or the API
-* Being able to add tags individually or in some nicer way than a comma
-  separated list of strings on the website
-* Sharing playlists between users
+* Creating a Mtg game platform.
+* Adding in a deck-builder rules and possible limitations.
+* Adding in machine learning recommendation systems.
+* Adding in message boards related to cards.
+* Look into how this would work as a plug-in for WOTC.
 
 ## 5. Proposed Architecture Overview
 
-This initial iteration will provide the minimum lovable product (MLP) including
-creating, retrieving, and updating a playlist, as well as adding to and
-retrieving a saved playlist's list of songs.
+This initial iteration will provide the minimum viable product (MVP) including
+Adding and retrieving cards to and from a recommendation list, as well as adding to a profile.
+It will also include Up-voting and Down-voting of cards in the list to help out the
+recommendation method in sorting cards.
 
-We will use API Gateway and Lambda to create five endpoints (`GetPlaylist`,
-`CreatePlaylist`, `UpdatePlaylist`, `AddSongToPlaylist`, and `GetPlaylistSongs`)
-that will handle the creation, update, and retrieval of playlists to satisfy our
+We will use SpringBoot and an SQL Database to create _____ endpoints ()
+that will handle the retrieval of cards and the addition of said cards to the list to satisfy our
 requirements.
 
-We will store songs available for playlists in a table in DynamoDB. Playlists
-themselves will also be stored in DynamoDB. For simpler song list retrieval, we
-will store the list of songs in a given playlist directly in the playlists
-table.
+We will store cards for our profile in a table in a Recommendations list. Recommendation lists
+themselves will be stored in an SQL database.
 
-AmazonMusicPlaylistService will also provide a web interface for users to manage
-their playlists. A main page providing a list view of all of their playlists
-will let them create new playlists and link off to pages per-playlist to update
-metadata and add songs.
+RecommendationService will also provide a web interface for users to manage
+their favorite cards. A main page providing a list view of all of their decklists
+will let them select a deck to view and add more cards to the list.
 
 ## 6. API
 
 ### 6.1. Public Models
 
 ```
-// PlaylistModel
+// UserModel
 
-String id;
-String name;
-String customerId;
-Integer songCount;
-List<String> tags;
+String userId;
+String userName;
+String role;
+String profileImageUrl
+List<List<String, String>> recommendationList; 
+//Possibly be a LinkedList
+
 ```
 
 ```
-// SongModel
-
-String asin;
-String album;
-Integer trackNumber;
-String title;
+// CardModel
+String cardName;
+String cardImageUrl;
+String cardId;
+String colors;
+String colorIdentity;
+String types;
+String subTypes;
+// Many more query parameters are available that could 
+// be added at later date
 ```
 
-### 6.2. Get Playlist Endpoint
+### 6.2. Get Card Endpoint
 
-* Accepts `GET` requests to `/playlists/:id`
-* Accepts a playlist ID and returns the corresponding PlaylistModel.
-    * If the given playlist ID is not found, will throw a
-      `PlaylistNotFoundException`
+* Accepts `GET` requests to `/Cards/:pathparameter`
+* Accepts a cards's name and returns the corresponding CardModel.
+    * If the given card is not found, will throw a
+      `CardNotFoundException`
 
-### 6.3. Create Playlist Endpoint
+### 6.3. Create User Endpoint
 
-* Accepts `POST` requests to `/playlists`
-* Accepts data to create a new playlist with a provided name, a given customer
-  ID, and an optional list of tags. Returns the new playlist, including a unique
-  playlist ID assigned by the Music Playlist Service.
-* For security concerns, we will validate the provided playlist name does not
-  contain any invalid characters: `" ' \`
-    * If the playlist name contains any of the invalid characters, will throw an
-      `InvalidAttributeValueException`.
+* Accepts `POST` requests to `/users`
+* Accepts data to create a new user with a provided userName, a given userId
+  ID, and an List of Recommendation lists. Returns the new user.
 
-### 6.4. Update Playlist Endpoint
+### 6.4. Update Recommendations List Endpoint
 
-* Accepts `PUT` requests to `/playlists/:id`
-* Accepts data to update a playlist including a playlist ID, an updated playlist
-  name, and the customer ID associated with the playlist. Returns the updated
-  playlist.
-    * If the playlist ID is not found, will throw a `PlaylistNotFoundException`
-* For security concerns, we will validate the provided playlist name does not
-  contain invalid characters: `" ' \`
-    * If the playlist name contains invalid characters, will throw an
-      `InvalidAttributeValueException`
+* Accepts `PUT` requests to `/cards/:id`
+* Accepts data to update a recommendation list including a card's ID and the card to be added's ID 
+associated with the playlist. Returns the updated playlist.
 
-![Client sends submit playlist update form to Website Playlist page. Website
-playlist page sends an update request to UpdatePlaylistActivity.
-UpdatePlaylistActivity saves updates to the playlists
-database.](images/example_design_document/UpdatePlaylistSD.png)
+### Update Profile List Endpoint
 
-### 6.5. Add Song To Playlist Endpoint
+* Accepts 'PUT' requests to '/user/:listId'
 
-* Accepts `POST` requests to `/playlists/:id/songs`
-* Accepts a playlist ID and a song to be added. The song is specified by the
-  album's ASIN and song track number
-    * If the playlist is not found, will throw a `PlaylistNotFoundException`
-    * If the given album ASIN doesn't exist, or if the given track number does
-      not exist for the album ASIN, will throw an `AlbumTrackNotFoundException`
-* By default, will insert the new song to the end of the playlist
-    * If the optional `queueNext` parameter is provided and is `true`, this API
-      will insert the new song to the front of the playlist so that it will be
-      the next song played
+### 6.5. Get User Endpoint
 
-![Client submits the add song form to the Website Add Song page. The website
-add song page sends an add song request to the AddSongToPlaylistActivity. The
-AddSongToPlaylistActivity save the updated playlist song list in the playlists
-database.](images/example_design_document/AddSongSD.png)
-
-### 6.6. Get Playlist Songs Endpoint
-
-* Accepts `GET` requests to `/playlists/:id/songs`
-* Retrieves all songs of a playlist with the given playlist ID
-    * Returns the song list in default playlist order
-    * If the optional `order` parameter is provided, this API will return the
-      song list in order, reverse order, or shuffled order, based on the value
-      of `order`
-        * DEFAULT - same as default behavior, returns songs in playlist order
-        * REVERSED - returns playlist songs in reversed order
-        * SHUFFLED - returns playlist songs in a randomized order
-* If the playlist ID is found, but contains no songs, the songs list will be
-  empty
-* If the playlist ID is not found, will throw a `PlaylistNotFoundException`
-
-![The client visits the playlist page of the Website Playlist. The Website
-playlist page sends a get song request to the GetPlaylistSongsActivity. The
-GetPlaylistSongsActivity calls the playlists database to load the playlist. The
-playlists database returns the playlist item to the GetPlaylistSongsActivity.
-The GetPlaylistSongsActivity returns a List<SongModel> to the Website Playlist
-page. The Website playlist page presents a list of songs to the
-client.](images/example_design_document/GetPlaylistSD.png)
-
+* Accepts `GET` requests to `/user/:id`
+* Accepts a user ID and returns the user.
+    * If the user is not found, will throw a `UserNotFoundException'
+    
+    
 ## 7. Tables
 
-### 7.1. `playlists`
+### 7.1. `user`
 
 ```
 id // partition key, string
-name // string
-customerId // string
-songCount // number
-tags // stringSet
-songList // list
+userName // string
+email // string
+imageUrl // string
+recommendationLists // list<list<String,String>>
 ```
 
-### 7.2. `album_tracks`
+### 7.2. `card`
 
 ```
-asin // partition key, string
-track_number // sort key, number
-album_name // string
-song_title // string
+ cardName // string
+ cardImageUrl // string
+ cardId // partition key, string
+ colors // string
+ colorIdentity // string
+ types // string
+ subTypes // string
 ```
 
 ## 8. Pages
